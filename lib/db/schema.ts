@@ -1,4 +1,4 @@
-import { pgTable, text, integer, date, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, date, timestamp, uniqueIndex, index, uuid } from "drizzle-orm/pg-core";
 
 /**
  * bookings — the one table that holds real, durable state.
@@ -14,6 +14,22 @@ import { pgTable, text, integer, date, timestamp, uniqueIndex, index } from "dri
  * really accept N bookings/hour — to do that, add `court` to the unique index
  * (venue_id, date, hour, court) and assign the lowest free court on insert.
  */
+export const users = pgTable("app_users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const sessions = pgTable("app_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const bookings = pgTable(
   "bookings",
   {
